@@ -9,7 +9,6 @@ intlist = list(map(int,m))
 for i in range(len(intlist)):
     if intlist[i] > mx:
         mx = intlist[i]
-        mx_i = i
     else:
         continue
 
@@ -18,13 +17,6 @@ for i in range(len(intlist)):
         mn = intlist[i]
     else:
         continue
-
-for i in range(len(intlist)):
-    if intlist[i] <  mn:
-        mn = intlist[i]
-    else:
-        continue
-
 
 for i in range(len(intlist)):
     if intlist[i] ==  mx:
