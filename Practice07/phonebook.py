@@ -101,7 +101,7 @@ def showall():
         print(row)
     cur.close() 
 
-#Exporting csv
+#Exporting to csv
 def exporting_to_csv(file):
     cur = conn.cursor()
 
@@ -117,6 +117,24 @@ def exporting_to_csv(file):
     conn.commit()
     cur.close()
 
+#Importing from csv
+def importing_to_csv(file):
+    cur = conn.cursor()
+
+
+    with open(file, 'r', newline='') as f:
+        import csv
+        reader= csv.reader(f)
+        next(reader)
+        for row in reader:
+           if not row or len(row) < 2:
+            continue
+           cur.execute("INSERT INTO phonebook (phone,phone_owner) VALUES (%s,%s)", row)
+
+    conn.commit()
+    cur.close()
+
+
 def menu():
     while True:
         print("------------Phonebook-----------")
@@ -126,6 +144,7 @@ def menu():
         print("4.Update the contact")
         print("5.Search contact")
         print("6.export to csv")
+        print("7.import from csv")
         print("0.Exit")
 
 
@@ -143,6 +162,8 @@ def menu():
          search_contact()
         elif choice == "6":
          exporting_to_csv("contacts.csv")
+        elif choice == "7":
+         importing_to_csv("import.csv")
         elif choice == "0":
          conn.close()
          break
