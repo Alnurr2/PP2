@@ -47,11 +47,12 @@ def update_contact():
     cur = conn.cursor()
 
     cur.execute(
-        "UPDATE phonebook SET phone = %s WHERE name = %s",
+        "UPDATE phonebook SET phone = %s WHERE phone_owner = %s",
         (phone, name)
     )
 
     conn.commit()
+    cur.close()
 
 #Searching
 def search_contact():
@@ -61,15 +62,18 @@ def search_contact():
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT * FROM phonebook WHERE name ILIKE %s",
+        "SELECT * FROM phonebook WHERE phone_owner ILIKE %s",
         (f"%{keyword}%",)
     )
+
 
     rows = cur.fetchall()
     for row in rows:
         print(row)
-
+    if len(rows) == 0:
+       print("Didnt find any contact with that name.")
     conn.commit()
+    cur.close()
 
 #Deleting
 def delete_contact():
@@ -78,19 +82,40 @@ def delete_contact():
     cur = conn.cursor()
 
     cur.execute(
-        "DELETE FROM phonebook WHERE name = %s",
+        "DELETE FROM phonebook WHERE phone_owner = %s",
         (name,)
     )
+
+    conn.commit()
+    print("Contact has been deleted.")
+    cur.close()
 
 #Show all
 def showall():
     cur = conn.cursor()
     cur.execute("SELECT * FROM phonebook;")
     rows = cur.fetchall()
+    if len(rows) == 0:
+       print("No contacts yet.")
     for row in rows:
         print(row)
     cur.close() 
 
+#Exporting csv
+def exporting_to_csv(file):
+    cur = conn.cursor()
+
+    cur.execute("SELECT phone, phone_owner FROM phonebook;")
+    rows = cur.fetchall()
+
+    with open(file, 'w', newline='') as f:
+        import csv
+        writer = csv.writer(f)
+        writer.writerow(["phone", "phone_owner"])
+        writer.writerows(rows)
+    
+    conn.commit()
+    cur.close()
 
 def menu():
     while True:
@@ -98,6 +123,9 @@ def menu():
         print("1.Show the contacts")
         print("2.Add contact")
         print("3.Deleting contact")
+        print("4.Update the contact")
+        print("5.Search contact")
+        print("6.export to csv")
         print("0.Exit")
 
 
@@ -109,6 +137,12 @@ def menu():
          insert_contact()
         elif choice == "3":
          delete_contact()
+        elif choice == "4":
+         update_contact()
+        elif choice == "5":
+         search_contact()
+        elif choice == "6":
+         exporting_to_csv("contacts.csv")
         elif choice == "0":
          conn.close()
          break
