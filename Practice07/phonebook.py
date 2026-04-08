@@ -86,6 +86,8 @@ def delete_contact():
         (name,)
     )
 
+    
+
     conn.commit()
     print("Contact has been deleted.")
     cur.close()
