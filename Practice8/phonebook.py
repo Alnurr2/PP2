@@ -1,6 +1,8 @@
 import psycopg2
 import csv
 from config import load_config
+import re
+
 
 
 conn = psycopg2.connect(
@@ -22,36 +24,36 @@ CREATE TABLE IF NOT EXIST phonebook (
         cur.execute(command)
         conn.commit()
 #Adding Contact function
-def insert_contact():
+def upsert_contact():
     name = input("Enter name: ")
     phone = input("Enter phone: ")
 
     cur = conn.cursor()
     
     cur.execute(
-        "INSERT INTO phonebook (phone,phone_owner) VALUES (%s, %s)",
-        (phone, name)
+       "CALL upsert_contact(%s,%s);",(phone, name)
     )
 
     conn.commit()
     print("Contact added.")
     cur.close()
 
-
-#Updating contact
-def update_contact():
-    name = input("Enter name to update: ")
-    phone = input("New phone: ")
+# PAGINATION
+def paginate_contact():
+    limit = input("Enter limit: ")
+    offset = input("Enter offset: ")
 
 
     cur = conn.cursor()
-
+    
     cur.execute(
-        "UPDATE phonebook SET phone = %s WHERE phone_owner = %s",
-        (phone, name)
+       "SELECT get_contacts_paginated(%s,%s);",(limit, offset)
     )
 
-    conn.commit()
+
+    rows = cur.fetchall()
+    for row in rows:
+       print(row)
     cur.close()
 
 #Searching
@@ -77,17 +79,10 @@ def search_contact():
 
 #Deleting
 def delete_contact():
-    name = input("Enter name to delete: ")
-
+    value = input("Enter name or phone to delete: ")
     cur = conn.cursor()
 
-    cur.execute(
-        "DELETE FROM phonebook WHERE phone_owner = %s",
-        (name,)
-    )
-
-    
-
+    cur.execute("CALL delete_contact(%s);", (value,))
     conn.commit()
     print("Contact has been deleted.")
     cur.close()
@@ -104,18 +99,34 @@ def showall():
     cur.close() 
 
 #Exporting to csv
-def exporting_to_csv(file):
+
+def add_several_contacts():
+    n = int(input("Number of contacts: ")) 
+
+    names = []
+    phones = []
+    pattern = r"^\+7\d{10}$"
+
+    for _ in range(n):
+        name = input("Name: ")
+
+        while True:
+            phone = input("Phone: ")
+            if re.fullmatch(pattern, phone):
+                break
+            else:
+                print("Invalid phone, try again")
+
+
+        names.append(name)
+        phones.append(phone)
+
     cur = conn.cursor()
+    cur.execute(
+        "CALL insert_contacts(%s, %s)",
+        (phones, names)
+    )
 
-    cur.execute("SELECT phone, phone_owner FROM phonebook;")
-    rows = cur.fetchall()
-
-    with open(file, 'w', newline='') as f:
-        import csv
-        writer = csv.writer(f)
-        writer.writerow(["phone", "phone_owner"])
-        writer.writerows(rows)
-    
     conn.commit()
     cur.close()
 
@@ -141,12 +152,12 @@ def menu():
     while True:
         print("------------Phonebook-----------")
         print("1.Show the contacts")
-        print("2.Add contact")
+        print("2.Upsert the contact")
         print("3.Deleting contact")
-        print("4.Update the contact")
         print("5.Search contact")
-        print("6.export to csv")
+        print("6.Add several contacts")
         print("7.import from csv")
+        print("8.Paginate table")
         print("0.Exit")
 
 
@@ -155,17 +166,17 @@ def menu():
         if choice == "1":
          showall()
         elif choice == "2":
-         insert_contact()
+         upsert_contact()
         elif choice == "3":
          delete_contact()
-        elif choice == "4":
-         update_contact()
         elif choice == "5":
          search_contact()
         elif choice == "6":
-         exporting_to_csv("contacts.csv")
+         add_several_contacts()
         elif choice == "7":
          importing_to_csv("import.csv")
+        elif choice == "8":
+           paginate_contact()
         elif choice == "0":
          conn.close()
          break
